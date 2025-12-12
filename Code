@@ -1,0 +1,98 @@
+#654 Final
+
+library(here)
+library(tidyverse)
+
+url <- "https://stacks.stanford.edu/file/druid:yg821jf8611/yg821jf8611_tn_nashville_2020_04_01.rds"
+download.file(url = url, destfile = "tn_nashville_2020_04_01.rds")
+#downloads data directly from the script (this was very cool)
+
+data <- readRDS("tn_nashville_2020_04_01.rds")
+#loads the data 
+
+dim(data)
+ls(data)
+str(data)
+#verify shape of data
+
+table(data$subject_race, data$search_vehicle)
+#i chose to focus on subject race and whether or not the vehicle was searched
+#the null Hyp: the search rate is consistent across racial groups and their % in the overall population
+#Hyp: the search rate is not consistent 
+
+table(data$subject_race)
+
+searchbyrace <- chisq.test(data$subject_race, data$search_vehicle, correct = FALSE)
+print(searchbyrace)
+summary(searchbyrace)
+#the chi test 
+
+searchbyrace$observed #this is the actual observed counts of vehicles searched by race
+searchbyrace$expected #this is the expected counts of vehicles searched by race
+searchbyrace$residuals #positives mean observed is greater than expected, negative means observed is less than expected 
+searchbyrace$stdres #z-scores
+
+data$subject_iswhite <- ifelse(data$subject_race == "white", "yes", "no")
+fisher.test(data$search_vehicle, data$subject_iswhite)
+
+
+search_summary <- data %>%
+  filter(!is.na(subject_race),
+         !is.na(search_vehicle)) %>% 
+  group_by(subject_race) %>%
+  summarise(
+    total_stops = n(),
+    vehicle_searched = sum(search_vehicle == TRUE),
+    not_searched = sum(search_vehicle == FALSE),
+    search_rate = vehicle_searched / total_stops * 100
+  ) %>%
+  arrange(desc(search_rate))
+
+search_summary
+
+write_csv(search_summary, "nashville_vehicle_search_by_race.csv")
+
+# Contingency table of race by vehicle search
+race_search_table <- table(data$subject_race, data$search_vehicle)
+race_search_table
+
+race_search_rowperc <- prop.table(race_search_table, margin = 1)
+race_search_rowperc
+
+# Total N in the table
+n_total <- sum(race_search_table)
+
+# Smaller dimension (rows vs columns)
+k_min <- min(dim(race_search_table))
+
+# Chi square statistic is in searchbyrace$statistic
+cramers_v <- sqrt(as.numeric(searchbyrace$statistic) / (n_total * (k_min - 1)))
+cramers_v
+
+# 2x2 table: White vs non White by vehicle search
+white_table <- table(data$subject_iswhite, data$search_vehicle)
+white_table
+
+white_rowperc <- prop.table(white_table, margin = 1)
+white_rowperc
+
+white_summary <- data %>%
+  filter(!is.na(subject_race),
+         !is.na(search_vehicle)) %>%
+  mutate(is_white = ifelse(subject_race == "white", "white", "non_white")) %>%
+  group_by(is_white) %>%
+  summarise(
+    total_stops = n(),
+    vehicle_searched = sum(search_vehicle == TRUE, na.rm = TRUE),
+    search_rate = (vehicle_searched / total_stops) * 100
+  )
+
+white_summary
+
+write_csv(white_summary, "white_vs_nonwhite_search_rates.csv")
+
+
+getwd()
+
+list.files()
+
