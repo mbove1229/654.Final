@@ -1,1 +1,1 @@
-This project uses data from the Stanford Open Policing Project, I analyzed whether vehicle search rates differ by race in Nashville, TN. The Data folder contains all the R code that I created in order to run the statitical tests I deemed necessary to come to my conclusion 
+This project uses data from the Stanford Open Policing Project, I analyzed whether vehicle search rates differ by race in Nashville, TN. The Data folder contains all the R code that I created in order to run the statitical tests I deemed necessary to come to my conclusion. 
